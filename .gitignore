@@ -1,0 +1,12 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+/tmp/
+
+# Сохранённые локальные материалы предыдущей редакции.
+/output/pdf/LR1_Variant_1115.pdf
+/diagrams/booking-sequence.*
+/diagrams/booking-state.*
+/diagrams/c4-context.*
+/diagrams/c4-events.*

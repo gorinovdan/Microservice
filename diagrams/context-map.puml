@@ -1,0 +1,65 @@
+@startuml
+title Карта ограниченных контекстов
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam TitleFontSize 19
+skinparam TitleFontColor #18334B
+skinparam ArrowFontSize 12
+skinparam ArrowColor #687D90
+skinparam ArrowFontColor #354B5E
+skinparam nodesep 32
+skinparam ranksep 48
+top to bottom direction
+skinparam rectangle {
+  BackgroundColor #EAF1F8
+  BorderColor #7F99B1
+  FontColor #18334B
+  RoundCorner 8
+}
+skinparam rectangle<<core>> {
+  BackgroundColor #E1EFE9
+  BorderColor #649582
+}
+skinparam rectangle<<external>> {
+  BackgroundColor #F1F3F5
+  BorderColor #A5B2BE
+}
+hide stereotype
+
+rectangle "Identity & Profile\nУчётные записи" as identity
+rectangle "Property Catalog\nКаталог отелей" as catalog
+rectangle "Reservations\nБронирование и доступность" as reservations <<core>>
+rectangle "Payments\nПлатежи и возвраты" as payments
+rectangle "Discovery\nПоиск предложений" as discovery
+rectangle "Guest Feedback\nОтзывы и рейтинг" as feedback
+rectangle "Guest Communication\nУведомления" as communication
+rectangle "Платёжный провайдер\nPSP" as psp <<external>>
+rectangle "Провайдер сообщений\nEmail / SMS" as delivery <<external>>
+
+identity -down-> catalog : Права отелей
+identity -down-> reservations : Полномочия
+identity -right-> communication : Контакты
+catalog -down-> reservations : Категории номеров
+catalog -left-> discovery : Описание отелей
+reservations -left-> discovery : Остатки и тарифы
+feedback -up-> discovery : Рейтинг
+reservations -right-> payments : Команды оплаты
+payments -left-> reservations : Финансовые результаты
+reservations -down-> feedback : Завершённые брони
+reservations -down-> communication : События брони
+payments -down-> communication : Оплата и возврат
+payments -right-> psp : API / ACL
+psp -left-> payments : Callback / ACL
+communication -right-> delivery : Доставка / ACL
+
+legend bottom left
+  <b>Обозначения</b>
+  Стрелка — направление передачи команды или сведений.
+  Внутренние связи — опубликованные контракты OHS/PL.
+  Customer–Supplier: Catalog и Payments поставляют контракты Reservations.
+  ACL — адаптер модели внешнего провайдера.
+  Зелёный блок — ключевой контекст Reservations.
+endlegend
+@enduml

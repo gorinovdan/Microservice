@@ -1,0 +1,80 @@
+@startuml
+!$ARROW_FONT_SIZE = 12
+!$REL_DESCR_MAX_CHAR_WIDTH = 27
+!$DEFAULT_WRAP_WIDTH = 185
+!include <C4/C4_Container>
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam TitleFontSize 19
+skinparam TitleFontColor #18334B
+skinparam ArrowFontSize 12
+skinparam ArrowColor #687D90
+skinparam ArrowFontColor #354B5E
+skinparam nodesep 32
+skinparam ranksep 48
+UpdateElementStyle("person", $bgColor="#18334B", $fontColor="#FFFFFF", $borderColor="#18334B")
+UpdateElementStyle("system", $bgColor="#2D5879", $fontColor="#FFFFFF", $borderColor="#2D5879")
+UpdateElementStyle("external_system", $bgColor="#F1F3F5", $fontColor="#34495B", $borderColor="#A5B2BE")
+UpdateElementStyle("container", $bgColor="#EAF1F8", $fontColor="#18334B", $borderColor="#7F99B1")
+UpdateBoundaryStyle("system", $fontColor="#526779", $borderColor="#ACBAC6", $borderStyle=DashedLine())
+UpdateRelStyle("#354B5E", "#687D90")
+AddElementTag("core", $bgColor="#E1EFE9", $fontColor="#173E34", $borderColor="#649582", $legendText="Критический сервис")
+AddElementTag("store", $bgColor="#F2F5F8", $fontColor="#18334B", $borderColor="#97AABD", $legendText="Хранилище")
+HIDE_STEREOTYPE()
+skinparam LegendFontColor #354B5E
+skinparam LegendBackgroundColor #F5F8FA
+skinparam LegendBorderColor #ACBAC6
+title C4 / C2. Владение данными
+LAYOUT_TOP_DOWN()
+skinparam ranksep 32
+
+System_Boundary(platform, "Платформа бронирования — хранилища") {
+  Container(user, "User Service", "HTTP / JSON; Kafka", "Профиль и полномочия")
+  Container(catalog, "Catalog Service", "HTTP / JSON; Kafka", "Описание и медиа")
+  Container(search, "Search Service", "HTTP / JSON; Kafka", "Производная модель")
+  Container(reservation, "Reservation Service", "HTTP / JSON; Kafka", "Бронь и доступность", $tags="core")
+  Container(payment, "Payment Service", "HTTP / JSON; Kafka", "Операции и возвраты")
+  Container(review, "Review Service", "HTTP / JSON; Kafka", "Тексты и рейтинг")
+  Container(notification, "Notification Service", "HTTP / JSON; Kafka", "Задания и доставка")
+
+  ContainerDb(user_db, "User DB", "PostgreSQL", "User, контакты, роли", $tags="store")
+  ContainerDb(catalog_db, "Catalog DB", "PostgreSQL", "Hotel, RoomType, метаданные", $tags="store")
+  ContainerDb(media, "Медиа каталога", "Object Storage", "Фотографии отелей", $tags="store")
+  ContainerDb(search_db, "Search Index", "OpenSearch", "Описание, квота, тарифы, рейтинг", $tags="store")
+  ContainerDb(reservation_db, "Reservation DB", "PostgreSQL", "Booking, Availability, тарифы, сага", $tags="store")
+  ContainerDb(payment_db, "Payment DB", "PostgreSQL", "Payment, Refund, сверка", $tags="store")
+  ContainerDb(review_db, "Review DB", "PostgreSQL", "Review, допуск, рейтинг", $tags="store")
+  ContainerDb(notification_db, "Notification DB", "PostgreSQL", "Notification, шаблоны, попытки", $tags="store")
+}
+
+Rel_R(user, user_db, "Чтение / запись", "SQL")
+Rel_R(catalog, catalog_db, "Чтение / запись", "SQL")
+Rel_R(catalog, media, "Чтение / запись", "Object Storage API")
+Rel_R(search, search_db, "Индексация / поиск", "HTTPS / JSON")
+Rel_R(reservation, reservation_db, "Бронь и квота атомарно", "SQL / ACID")
+Rel_R(payment, payment_db, "Финансовое состояние", "SQL")
+Rel_R(review, review_db, "Чтение / запись", "SQL")
+Rel_R(notification, notification_db, "Задания и результаты", "SQL")
+
+Lay_D(user, catalog)
+Lay_D(catalog, search)
+Lay_D(search, reservation)
+Lay_D(reservation, payment)
+Lay_D(payment, review)
+Lay_D(review, notification)
+Lay_D(user_db, catalog_db)
+Lay_D(catalog_db, media)
+Lay_D(media, search_db)
+Lay_D(search_db, reservation_db)
+Lay_D(reservation_db, payment_db)
+Lay_D(payment_db, review_db)
+Lay_D(review_db, notification_db)
+
+legend bottom right
+  <b>C2 — приложения и хранилища</b>
+  Каждое хранилище доступно для записи только владельцу.
+  Outbox и обработанные сообщения находятся в БД владельца.
+endlegend
+@enduml

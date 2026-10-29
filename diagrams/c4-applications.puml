@@ -1,0 +1,76 @@
+@startuml
+!$ARROW_FONT_SIZE = 12
+!$REL_DESCR_MAX_CHAR_WIDTH = 27
+!$DEFAULT_WRAP_WIDTH = 185
+!include <C4/C4_Container>
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam TitleFontSize 19
+skinparam TitleFontColor #18334B
+skinparam ArrowFontSize 12
+skinparam ArrowColor #687D90
+skinparam ArrowFontColor #354B5E
+skinparam nodesep 32
+skinparam ranksep 48
+UpdateElementStyle("person", $bgColor="#18334B", $fontColor="#FFFFFF", $borderColor="#18334B")
+UpdateElementStyle("system", $bgColor="#2D5879", $fontColor="#FFFFFF", $borderColor="#2D5879")
+UpdateElementStyle("external_system", $bgColor="#F1F3F5", $fontColor="#34495B", $borderColor="#A5B2BE")
+UpdateElementStyle("container", $bgColor="#EAF1F8", $fontColor="#18334B", $borderColor="#7F99B1")
+UpdateBoundaryStyle("system", $fontColor="#526779", $borderColor="#ACBAC6", $borderStyle=DashedLine())
+UpdateRelStyle("#354B5E", "#687D90")
+AddElementTag("core", $bgColor="#E1EFE9", $fontColor="#173E34", $borderColor="#649582", $legendText="Критический сервис")
+AddElementTag("store", $bgColor="#F2F5F8", $fontColor="#18334B", $borderColor="#97AABD", $legendText="Хранилище")
+HIDE_STEREOTYPE()
+skinparam LegendFontColor #354B5E
+skinparam LegendBackgroundColor #F5F8FA
+skinparam LegendBorderColor #ACBAC6
+title C4 / C2. Синхронные взаимодействия
+LAYOUT_TOP_DOWN()
+skinparam nodesep 22
+skinparam ranksep 55
+skinparam wrapWidth 145
+
+Person(actor, "Пользователь", "Гость, представитель отеля, поддержка")
+System_Ext(psp, "Платёжный провайдер", "Платёжная страница и API")
+System_Ext(delivery, "Провайдер сообщений", "Email / SMS")
+
+System_Boundary(platform, "Платформа бронирования") {
+  Container(web, "Web UI", "Web-приложение", "Пользовательский интерфейс")
+  Container(gateway, "API Gateway", "HTTPS / reverse proxy", "Маршрутизация и проверка доступа")
+  Container(user, "User Service", "HTTP / JSON", "Профиль и доступ")
+  Container(catalog, "Catalog Service", "HTTP / JSON", "Отели и номера")
+  Container(search, "Search Service", "HTTP / JSON", "Поиск")
+  Container(reservation, "Reservation Service", "HTTP / JSON", "Квота и брони", $tags="core")
+  Container(payment, "Payment Service", "HTTP / JSON", "Оплата и возврат")
+  Container(review, "Review Service", "HTTP / JSON", "Отзывы")
+  Container(notification, "Notification Service", "HTTP / JSON", "Сообщения")
+}
+
+Rel_D(actor, web, "Работа с системой", "HTTPS")
+Rel_D(web, gateway, "Клиентский API", "HTTPS / JSON")
+Rel_D(gateway, user, "Профиль")
+Rel_D(gateway, catalog, "Каталог")
+Rel_D(gateway, search, "Поиск")
+Rel_D(gateway, reservation, "Бронирование")
+Rel_D(gateway, payment, "Оплата")
+Rel_D(gateway, review, "Отзывы")
+Rel_D(gateway, notification, "Настройки")
+BiRel_D(payment, psp, "Операции / callback", "HTTPS")
+BiRel_D(notification, delivery, "Отправка / callback", "HTTPS")
+
+Lay_R(user, catalog)
+Lay_R(catalog, search)
+Lay_R(search, reservation)
+Lay_R(reservation, payment)
+Lay_R(payment, review)
+Lay_R(review, notification)
+
+legend bottom left
+  <b>C2 — приложения и HTTP-контракты</b>
+  Зелёный — критический сервис; серый — внешний провайдер.
+  Входящие callback провайдеров проходят через Gateway.
+  Событийные связи приведены на Context Map; хранилища — на виде данных.
+endlegend
+@enduml
